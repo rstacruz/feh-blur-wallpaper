@@ -1,6 +1,6 @@
 # feh-blur
 
-Blur your feh wallpaper.
+Blur your feh wallpaper. Runs as a service, blurring any wallpaper set by feh.
 
 Based on [ganifladi/blurme](https://github.com/ganifladi/blurme).
 

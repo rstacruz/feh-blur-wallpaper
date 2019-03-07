@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
+# https://github.com/rstacruz/feh-blur
 
 PROC_EXPR="bash.*$(basename "$0")"
 BIN="$(basename "$0")"
 CACHE_DIR="/tmp/feh-blur.$$"
 ANIMATION_INTERVAL=0.005
 VERBOSE=0
-wall_original="$CACHE_DIR/original.png"
-wall_blurred="$CACHE_DIR/blur-0.png"
+EXT="ppm"
+wall_original="$CACHE_DIR/original.$EXT"
 
 # Echo some info
 info () {
@@ -26,8 +27,7 @@ debug () {
 generate_blurred_images () {
   mkdir -p "$CACHE_DIR"
   local source="$1"
-  local original="$CACHE_DIR/original.png"
-  local destination="$CACHE_DIR/blur-0.png"
+  local original="$CACHE_DIR/original.$EXT"
 
   cp "$source" "$original"
 
@@ -37,17 +37,17 @@ generate_blurred_images () {
     -scale 33% \
     -blur 0x2 \
     -scale 300% \
-    "$CACHE_DIR/blur-0.png"
-  gm convert "$CACHE_DIR/blur-0.png" \
+    "$CACHE_DIR/blur-0.$EXT"
+  gm convert "$CACHE_DIR/blur-0.$EXT" \
     -scale 33% \
     -blur 0x8 \
     -scale 300% \
-    "$CACHE_DIR/blur-1.png"
-  gm convert "$CACHE_DIR/blur-0.png" \
+    "$CACHE_DIR/blur-1.$EXT"
+  gm convert "$CACHE_DIR/blur-0.$EXT" \
     -scale 33% \
-    -blur 0x12 \
+    -blur 0x16 \
     -scale 300% \
-    "$CACHE_DIR/blur-final.png"
+    "$CACHE_DIR/blur-final.$EXT"
   info "Done."
 }
 
@@ -75,18 +75,18 @@ is_blank() {
 
 set_blurred_wallpaper() {
   debug "Setting blurred wallpaper"
-  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-0.png"
+  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-0.$EXT"
   sleep $ANIMATION_INTERVAL
-  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-1.png"
+  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-1.$EXT"
   sleep $ANIMATION_INTERVAL
-  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-final.png"
+  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-final.$EXT"
 }
 
 set_original_wallpaper() {
   debug "Setting original wallpaper"
-  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-1.png"
+  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-1.$EXT"
   sleep $ANIMATION_INTERVAL
-  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-0.png"
+  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-0.$EXT"
   sleep $ANIMATION_INTERVAL
   feh --no-fehbg --bg-fill "$wall_original"
 }
@@ -101,8 +101,8 @@ kill_other_instances() {
 }
 
 run_loop () {
-  state_blank=""
-  state_wallpaper=""
+  state_blank="-"
+  state_wallpaper="-"
 
   while true; do
     # Check if wallpaper has changed.
@@ -110,11 +110,13 @@ run_loop () {
     if [[ "$state_wallpaper" != "$now_wallpaper" ]]; then
       if [[ -z "$now_wallpaper" ]]; then
         echo "Can't find wallpaper. Set a wallpaper using feh first."
-        exit
+        sleep 0.5
+        continue
+      else
+        generate_blurred_images "$now_wallpaper"
+        state_wallpaper="$now_wallpaper"
+        state_blank=""
       fi
-      generate_blurred_images "$now_wallpaper"
-      state_wallpaper="$now_wallpaper"
-      state_blank=""
     fi
 
     now_blank="$(is_blank && echo 1 || echo 0)"
