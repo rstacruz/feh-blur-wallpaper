@@ -4,18 +4,25 @@ PROC_EXPR="bash.*$(basename "$0")"
 BIN="$(basename "$0")"
 CACHE_DIR="/tmp/feh-blur.$$"
 ANIMATION_INTERVAL=0.005
+VERBOSE=0
 wall_original="$CACHE_DIR/original.png"
 wall_blurred="$CACHE_DIR/blur-0.png"
 
+# Echo some info
 info () {
-  echo "==> $1"
+  if [[ "$VERBOSE" == 1 ]]; then
+    echo "==> $1"
+  fi
 }
 
+# Log some debug info
 debug () {
-  return
-  # echo "  - $1"
+  if [[ "$VERBOSE" == 1 ]]; then
+    echo "  - $1"
+  fi
 }
 
+# Generate a bunch of images
 generate_blurred_images () {
   mkdir -p "$CACHE_DIR"
   local original="$CACHE_DIR/original.png"
@@ -26,21 +33,21 @@ generate_blurred_images () {
   info "Generating blurred images from '$wall_source'"
   gm convert "$original" \
     -resize 1920x \
-    -scale 90% \
-    -blur 0x8 \
-    -scale 112% \
+    -scale 33% \
+    -blur 0x2 \
+    -scale 300% \
     "$CACHE_DIR/blur-0.png"
   gm convert "$original" \
     -resize 1920x \
-    -scale 75% \
-    -blur 0x16 \
-    -scale 133% \
+    -scale 33% \
+    -blur 0x8 \
+    -scale 300% \
     "$CACHE_DIR/blur-1.png"
   gm convert "$original" \
     -resize 1920x \
-    -scale 50% \
-    -blur 0x16 \
-    -scale 200% \
+    -scale 33% \
+    -blur 0x12 \
+    -scale 300% \
     "$CACHE_DIR/blur-final.png"
 }
 
@@ -116,28 +123,65 @@ run_loop () {
   done
 }
 
-main() {
+parse_opts() {
   while [[ "$1" =~ ^- && ! "$1" == "--" ]]; do case $1 in
     -h | --help)
-    echo "Usage: $BIN"
-    exit
-    ;;
+      echo "Usage: $BIN [-v|--verbose]"
+      exit
+      ;;
     -V | --version )
       echo version
       exit
       ;;
-  #   -s | --string )
-  #     # shift; string=$1
-  #     ;;
-  #   -f | --flag )
-  #     # flag=1
-  #     ;;
+    -v | --verbose )
+      VERBOSE=1
+      ;;
   esac; shift; done
   if [[ "$1" == '--' ]]; then shift; fi
+}
 
+ensure_feh() {
+  if ! command -v feh >/dev/null; then
+    echo "$BIN requires Feh to set wallpapers."
+    exit
+  fi
+}
+
+ensure_gm() {
+  if ! command -v gm >/dev/null; then
+    echo "$BIN requires GraphicsMagick to set wallpapers."
+    exit
+  fi
+}
+
+ensure_wmctrl() {
+  if ! command -v wmctrl >/dev/null; then
+    echo "$BIN requires wmctrl to detect events."
+    exit
+  fi
+}
+
+main() {
+  ensure_feh
+  ensure_gm
+  ensure_wmctrl
+  parse_opts "$@"
   kill_other_instances
   generate_blurred_images
   run_loop
 }
 
+finish () {
+  info "Destroying the cache"
+  rm -rf "$CACHE_DIR"
+
+  info "Resetting wallpaper"
+  feh --bg-fill "$wall_source"
+  exit 1
+}
+
+trap finish EXIT
+trap finish SIGHUP
+trap finish SIGINT
+trap finish SIGTERM
 main "$@"
