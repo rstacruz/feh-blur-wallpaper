@@ -1,0 +1,143 @@
+#!/usr/bin/env bash
+
+PROC_EXPR="bash.*$(basename "$0")"
+BIN="$(basename "$0")"
+CACHE_DIR="/tmp/feh-blur.$$"
+ANIMATION_INTERVAL=0.005
+wall_original="$CACHE_DIR/original.png"
+wall_blurred="$CACHE_DIR/blur-0.png"
+
+info () {
+  echo "==> $1"
+}
+
+debug () {
+  return
+  # echo "  - $1"
+}
+
+generate_blurred_images () {
+  mkdir -p "$CACHE_DIR"
+  local original="$CACHE_DIR/original.png"
+  local destination="$CACHE_DIR/blur-0.png"
+
+  cp "$wall_source" "$original"
+
+  info "Generating blurred images from '$wall_source'"
+  gm convert "$original" \
+    -resize 1920x \
+    -scale 90% \
+    -blur 0x8 \
+    -scale 112% \
+    "$CACHE_DIR/blur-0.png"
+  gm convert "$original" \
+    -resize 1920x \
+    -scale 75% \
+    -blur 0x16 \
+    -scale 133% \
+    "$CACHE_DIR/blur-1.png"
+  gm convert "$original" \
+    -resize 1920x \
+    -scale 50% \
+    -blur 0x16 \
+    -scale 200% \
+    "$CACHE_DIR/blur-final.png"
+}
+
+# Get current feh wallpaper
+get_feh_wallpaper() {
+  tail -n1 "$HOME/.fehbg" | cut -d"'" -f2
+}
+
+# get_current_workspace => "2"
+get_current_workspace() {
+  # 2 * DG: N/A VP: 0,0 WA: N/A Name
+  wmctrl -d | grep '\*' | cut -d' ' -f1
+}
+
+# get_open_windows_count() => "2"
+get_open_windows_count() {
+  workspace="$(get_current_workspace)"
+  wmctrl -l | cut -d' ' -f3 | grep -c "$workspace"
+}
+
+is_blank() {
+  count=$(get_open_windows_count)
+  [[ "$count" -eq 0 ]]
+}
+
+set_blurred_wallpaper() {
+  debug "Setting blurred wallpaper"
+  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-0.png"
+  sleep $ANIMATION_INTERVAL
+  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-1.png"
+  sleep $ANIMATION_INTERVAL
+  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-final.png"
+}
+
+set_original_wallpaper() {
+  debug "Setting original wallpaper"
+  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-1.png"
+  sleep $ANIMATION_INTERVAL
+  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-0.png"
+  sleep $ANIMATION_INTERVAL
+  feh --no-fehbg --bg-fill "$wall_original"
+}
+
+kill_other_instances() {
+  while [[ $(pgrep -fcl "$PROC_EXPR") -gt 1 ]]; do
+    old_pid="$(pgrep -fo "$PROC_EXPR")"
+    echo "$BIN found ($old_pid), killing"
+    kill "$old_pid"
+    sleep 0.1
+  done
+}
+
+wall_source="$(get_feh_wallpaper)"
+if [[ -z "$wall_source" ]]; then
+  echo "Can't find wallpaper. Set a wallpaper using feh first."
+  exit
+fi
+
+run_loop () {
+  info "Starting service"
+  state_blank="-1"
+  while true; do
+    now_blank="$(is_blank && echo 1 || echo 0)"
+    if [[ "$state_blank" != "$now_blank" ]]; then
+      if [[ "$now_blank" == 0 ]]; then
+        set_blurred_wallpaper
+      else
+        set_original_wallpaper
+      fi
+      state_blank="$now_blank"
+    fi
+    sleep 0.5
+  done
+}
+
+main() {
+  while [[ "$1" =~ ^- && ! "$1" == "--" ]]; do case $1 in
+    -h | --help)
+    echo "Usage: $BIN"
+    exit
+    ;;
+    -V | --version )
+      echo version
+      exit
+      ;;
+  #   -s | --string )
+  #     # shift; string=$1
+  #     ;;
+  #   -f | --flag )
+  #     # flag=1
+  #     ;;
+  esac; shift; done
+  if [[ "$1" == '--' ]]; then shift; fi
+
+  kill_other_instances
+  generate_blurred_images
+  run_loop
+}
+
+main "$@"
