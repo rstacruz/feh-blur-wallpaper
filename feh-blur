@@ -25,30 +25,30 @@ debug () {
 # Generate a bunch of images
 generate_blurred_images () {
   mkdir -p "$CACHE_DIR"
+  local source="$1"
   local original="$CACHE_DIR/original.png"
   local destination="$CACHE_DIR/blur-0.png"
 
-  cp "$wall_source" "$original"
+  cp "$source" "$original"
 
-  info "Generating blurred images from '$wall_source'"
+  info "Generating blurred images from '$source'..."
   gm convert "$original" \
     -resize 1920x \
     -scale 33% \
     -blur 0x2 \
     -scale 300% \
     "$CACHE_DIR/blur-0.png"
-  gm convert "$original" \
-    -resize 1920x \
+  gm convert "$CACHE_DIR/blur-0.png" \
     -scale 33% \
     -blur 0x8 \
     -scale 300% \
     "$CACHE_DIR/blur-1.png"
-  gm convert "$original" \
-    -resize 1920x \
+  gm convert "$CACHE_DIR/blur-0.png" \
     -scale 33% \
     -blur 0x12 \
     -scale 300% \
     "$CACHE_DIR/blur-final.png"
+  info "Done."
 }
 
 # Get current feh wallpaper
@@ -100,16 +100,23 @@ kill_other_instances() {
   done
 }
 
-wall_source="$(get_feh_wallpaper)"
-if [[ -z "$wall_source" ]]; then
-  echo "Can't find wallpaper. Set a wallpaper using feh first."
-  exit
-fi
-
 run_loop () {
-  info "Starting service"
-  state_blank="-1"
+  state_blank=""
+  state_wallpaper=""
+
   while true; do
+    # Check if wallpaper has changed.
+    now_wallpaper="$(get_feh_wallpaper)"
+    if [[ "$state_wallpaper" != "$now_wallpaper" ]]; then
+      if [[ -z "$now_wallpaper" ]]; then
+        echo "Can't find wallpaper. Set a wallpaper using feh first."
+        exit
+      fi
+      generate_blurred_images "$now_wallpaper"
+      state_wallpaper="$now_wallpaper"
+      state_blank=""
+    fi
+
     now_blank="$(is_blank && echo 1 || echo 0)"
     if [[ "$state_blank" != "$now_blank" ]]; then
       if [[ "$now_blank" == 0 ]]; then
@@ -167,7 +174,6 @@ main() {
   ensure_wmctrl
   parse_opts "$@"
   kill_other_instances
-  generate_blurred_images
   run_loop
 }
 
