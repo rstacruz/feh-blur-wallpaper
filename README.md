@@ -12,7 +12,7 @@ feh-blur-wallpaper
 </h1>
 
 <p align='center'>
-Blur your desktop wallpaper when windows are open. Runs as a service, blurring any wallpaper set by [feh]. Works great with [i3], but should work with any window manager (!).
+<em>Blur your desktop wallpaper when windows are open (Linux)</em>
 </p>
 
 <p align='center'>
@@ -20,6 +20,10 @@ Blur your desktop wallpaper when windows are open. Runs as a service, blurring a
 </p>
 
 <br>
+
+Blurs your desktop wallpaper when windows are open.
+Runs as a service, blurring any wallpaper set by [feh].
+Works great with [i3wm], but should work with any Linux window manager! 🎉
 
 ## Usage
 
@@ -52,9 +56,6 @@ sudo apt install wmctrl graphicsmagick feh
 
 Based on [ganifladi/blurme](https://github.com/ganifladi/blurme). feh-blur-wallpaper has been written from the ground up, using some parts of blurme as reference.
 
-[feh]: https://wiki.archlinux.org/index.php/feh
-[i3]: https://i3wm.org/
-
 ## Thanks
 
 **feh-wallpaper-blur** © 2019, Rico Sta. Cruz. Released under the [MIT] License.<br>
@@ -69,3 +70,5 @@ Authored and maintained by Rico Sta. Cruz with help from contributors ([list][co
 
 [mit]: http://mit-license.org/
 [contributors]: http://github.com/rstacruz/feh-wallpaper-blur/contributors
+[feh]: https://wiki.archlinux.org/index.php/feh
+[i3wm]: https://i3wm.org/
