@@ -31,7 +31,14 @@ Run `feh-blur`. (Tip: optionally, you can pass `-d` to it to run it in the backg
 
 ```sh
 # Step 1: run the feh-blur service
-feh-blur [-d]
+$ feh-blur
+
+ >> Monitoring changes
+    feh-blur will now blur any wallpapers set using 'feh'.
+
+ >> Found wallpaper
+    /home/rsc/wallpapers/unsplash.jpg
+    Generating blurred images... done.
 ```
 
 Set a wallpaper using [feh]. You can do this before starting feh-blur, or while feh-blur is running.
