@@ -1,24 +1,54 @@
 #!/usr/bin/env bash
 # https://github.com/rstacruz/feh-blur
+# vim:foldmethod=marker,foldmarker={,}
 
 PROC_EXPR="bash.*$(basename "$0")"
+
+# The name of this program
 BIN="$(basename "$0")"
+
+# Where to write stuff
 CACHE_DIR="/tmp/feh-blur.$$"
+
+# Interval between frames in an animation
 ANIMATION_INTERVAL=0.005
-VERBOSE=0
+
+# Interval to check with wmctrl
+POLL_INTERVAL=0.5
+
+# The verbosity. --verbose sets this to 2, and --quiet sets it to 0.
+VERBOSE=1
+
+# Run mode. -d sets this to background (daemon) mode.
+MODE=foreground
+
+# Image extension to use. 'ppm' is used because it's faster to read/write to, I
+# think.
 EXT="ppm"
+
+# Guard so that do_cleanup will only be invoked once.
+CLEANING_UP=0
+
+# The original source.
 wall_original="$CACHE_DIR/original.$EXT"
 
-# Echo some info
+# Echo some info. Only if verbose=1
 info () {
-  if [[ "$VERBOSE" == 1 ]]; then
-    echo "==> $1"
+  if [[ "$VERBOSE" -gt 0 ]]; then
+    echo "    $1"
+  fi
+}
+
+head () {
+  if [[ "$VERBOSE" -gt 0 ]]; then
+    echo ""
+    echo -e " \033[31m>>\033[32m $1\033[0m"
   fi
 }
 
 # Log some debug info
 debug () {
-  if [[ "$VERBOSE" == 1 ]]; then
+  if [[ "$VERBOSE" -gt 1 ]]; then
     echo "  - $1"
   fi
 }
@@ -29,11 +59,12 @@ generate_blurred_images () {
   local source="$1"
   local original="$CACHE_DIR/original.$EXT"
 
-  cp "$source" "$original"
+  gm convert "$source" -resize 1920x "$original"
 
-  info "Generating blurred images from '$source'..."
+  head "Found wallpaper"
+  info "$source"
+  info "Generating blurred images..."
   gm convert "$original" \
-    -resize 1920x \
     -scale 33% \
     -blur 0x2 \
     -scale 300% \
@@ -75,75 +106,111 @@ is_blank() {
 
 set_blurred_wallpaper() {
   debug "Setting blurred wallpaper"
-  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-0.$EXT"
+
+  # We're going to redirect output to /dev/null to supress feh warnings
+  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-0.$EXT" &> /dev/null
   sleep $ANIMATION_INTERVAL
-  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-1.$EXT"
+  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-1.$EXT" &> /dev/null
   sleep $ANIMATION_INTERVAL
-  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-final.$EXT"
+  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-final.$EXT" &> /dev/null
 }
 
 set_original_wallpaper() {
   debug "Setting original wallpaper"
-  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-1.$EXT"
+  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-1.$EXT" &> /dev/null
   sleep $ANIMATION_INTERVAL
-  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-0.$EXT"
+  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-0.$EXT" &> /dev/null
   sleep $ANIMATION_INTERVAL
-  feh --no-fehbg --bg-fill "$wall_original"
+  feh --no-fehbg --bg-fill "$wall_original" &> /dev/null
 }
 
 kill_other_instances() {
-  while [[ $(pgrep -fcl "$PROC_EXPR") -gt 1 ]]; do
-    old_pid="$(pgrep -fo "$PROC_EXPR")"
-    echo "$BIN found ($old_pid), killing"
-    kill "$old_pid"
-    sleep 0.1
-  done
+  if [[ "$(pgrep -fcl "$PROC_EXPR")" -gt 1 ]]; then
+    head "Stopping other instances of $BIN..."
+
+    local count=1
+    while [[ "$(pgrep -fcl "$PROC_EXPR")" -gt 1 ]]; do
+      count=$(( count + 1 ))
+      old_pid="$(pgrep -fo "$PROC_EXPR")"
+
+      # Kill it; if it refuses after some time, force-stop it
+      if [[ "$count" -gt 10 ]]; then
+        kill -9 "$old_pid"
+      else
+        kill "$old_pid"
+      fi
+      sleep 0.1
+    done
+  fi
 }
 
 run_loop () {
-  state_blank="-"
-  state_wallpaper="-"
+  prev_blank="-"
+  prev_wallpaper="-"
 
   while true; do
+    wallpaper="$(get_feh_wallpaper)"
+
     # Check if wallpaper has changed.
-    now_wallpaper="$(get_feh_wallpaper)"
-    if [[ "$state_wallpaper" != "$now_wallpaper" ]]; then
-      if [[ -z "$now_wallpaper" ]]; then
-        echo "Can't find wallpaper. Set a wallpaper using feh first."
-        sleep 0.5
+    if [[ "$prev_wallpaper" != "$wallpaper" ]]; then
+      # If there's no wallpaper, try again later.
+      if [[ -z "$wallpaper" ]]; then
+        sleep "$POLL_INTERVAL"
         continue
       else
-        generate_blurred_images "$now_wallpaper"
-        state_wallpaper="$now_wallpaper"
-        state_blank=""
+        generate_blurred_images "$wallpaper"
+        prev_wallpaper="$wallpaper"
+        prev_blank=""
       fi
     fi
 
-    now_blank="$(is_blank && echo 1 || echo 0)"
-    if [[ "$state_blank" != "$now_blank" ]]; then
-      if [[ "$now_blank" == 0 ]]; then
+    blank="$(is_blank && echo 1 || echo 0)"
+    if [[ "$prev_blank" != "$blank" ]]; then
+      if [[ "$blank" == 0 ]]; then
         set_blurred_wallpaper
       else
         set_original_wallpaper
       fi
-      state_blank="$now_blank"
+      prev_blank="$blank"
     fi
-    sleep 0.5
+    sleep "$POLL_INTERVAL"
   done
+}
+
+show_help() {
+  echo "Usage: $BIN [-v|--verbose]"
+  echo ''
+  echo 'Options:'
+  echo ''
+  echo '  -d, --daemon    Run in background'
+  echo '  -s, --stop      Stop previously-ran daemon'
+  echo ''
+  echo '  -v, --verbose   Show more messages'
+  echo '  -q, --quiet     Supress messages'
+  echo ''
 }
 
 parse_opts() {
   while [[ "$1" =~ ^- && ! "$1" == "--" ]]; do case $1 in
     -h | --help)
-      echo "Usage: $BIN [-v|--verbose]"
+      show_help
       exit
       ;;
     -V | --version )
       echo version
       exit
       ;;
+    -d | --daemon )
+      MODE=background
+      ;;
+    -s | --stop )
+      MODE=stop
+      ;;
+    -q | --quiet )
+      VERBOSE=0
+      ;;
     -v | --verbose )
-      VERBOSE=1
+      VERBOSE=2
       ;;
   esac; shift; done
   if [[ "$1" == '--' ]]; then shift; fi
@@ -156,6 +223,7 @@ ensure_feh() {
   fi
 }
 
+# Ensure that 'graphicsmagick' is available.
 ensure_gm() {
   if ! command -v gm >/dev/null; then
     echo "$BIN requires GraphicsMagick to set wallpapers."
@@ -170,21 +238,59 @@ ensure_wmctrl() {
   fi
 }
 
+print_usage() {
+  head "Monitoring changes"
+  info "$BIN will now blur any wallpapers set using 'feh'."
+  info "To change your wallpaper, try:"
+  info ""
+  info "    feh --bg-fill your-image.jpg"
+}
+
 main() {
   ensure_feh
   ensure_gm
   ensure_wmctrl
   parse_opts "$@"
-  kill_other_instances
-  run_loop
+
+  case "$MODE" in
+    background)
+      kill_other_instances
+      print_usage
+      "$0" --quiet & disown
+      head "Background mode"
+      info "$BIN started in background mode!"
+      info "To stop, use '$BIN --stop'."
+      ;;
+  
+    stop)
+      kill_other_instances
+      ;;
+
+    *)
+      kill_other_instances
+      print_usage
+      run_loop
+      ;;
+  esac
+}
+
+# Perform cleanup operations before stopping.
+do_cleanup () {
+  # Guard clause so that it's only ran once
+  if [[ "$CLEANING_UP" == "1" ]]; then return; fi
+  CLEANING_UP=1
+
+  rm -rf "$CACHE_DIR"
+
+  # Restore original wallpaper before exiting
+  if [[ "$MODE" == "foreground" ]] && [[ -e "$HOME/.fehbg" ]]; then
+    head "Restoring original wallpaper"
+    source "$HOME/.fehbg"
+  fi
 }
 
 finish () {
-  info "Destroying the cache"
-  rm -rf "$CACHE_DIR"
-
-  info "Resetting wallpaper"
-  feh --bg-fill "$wall_source"
+  do_cleanup
   exit 1
 }
 
