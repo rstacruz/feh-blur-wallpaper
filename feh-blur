@@ -29,6 +29,9 @@ EXT="ppm"
 # Guard so that do_cleanup will only be invoked once.
 CLEANING_UP=0
 
+# Dim strength
+DIM_STRENGTH="0.5"
+
 # The original source.
 wall_original="$CACHE_DIR/original.$EXT"
 
@@ -67,16 +70,19 @@ generate_blurred_images () {
   gm convert "$original" \
     -scale 33% \
     -blur 0x2 \
+    -fill "#000" -colorize 10% \
     -scale 300% \
     "$CACHE_DIR/blur-0.$EXT"
   gm convert "$CACHE_DIR/blur-0.$EXT" \
     -scale 33% \
     -blur 0x8 \
+    -fill "#000" -colorize 20% \
     -scale 300% \
     "$CACHE_DIR/blur-1.$EXT"
   gm convert "$CACHE_DIR/blur-0.$EXT" \
     -scale 33% \
     -blur 0x16 \
+    -fill "#000" -colorize 40% \
     -scale 300% \
     "$CACHE_DIR/blur-final.$EXT"
   info "Done."
