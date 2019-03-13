@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # https://github.com/rstacruz/feh-blur
-# vim:foldmethod=marker,foldmarker={,}
 
 PROC_EXPR="bash.*$(basename "$0")"
 
@@ -13,8 +12,11 @@ CACHE_DIR="/tmp/feh-blur.$$"
 # Interval between frames in an animation
 ANIMATION_INTERVAL=0.005
 
+# Fade in and out?
+ANIMATE_FADE=1
+
 # Interval to check with wmctrl
-POLL_INTERVAL=0.5
+POLL_INTERVAL=0.3
 
 # The verbosity. --verbose sets this to 2, and --quiet sets it to 0.
 VERBOSE=1
@@ -28,9 +30,6 @@ EXT="ppm"
 
 # Guard so that do_cleanup will only be invoked once.
 CLEANING_UP=0
-
-# Dim strength
-DIM_STRENGTH="0.5"
 
 # The original source.
 wall_original="$CACHE_DIR/original.$EXT"
@@ -70,19 +69,19 @@ generate_blurred_images () {
   gm convert "$original" \
     -scale 33% \
     -blur 0x2 \
-    -fill "#000" -colorize 10% \
+    -fill "#000" -colorize 7% \
     -scale 300% \
     "$CACHE_DIR/blur-0.$EXT"
   gm convert "$CACHE_DIR/blur-0.$EXT" \
     -scale 33% \
     -blur 0x8 \
-    -fill "#000" -colorize 20% \
+    -fill "#000" -colorize 12% \
     -scale 300% \
     "$CACHE_DIR/blur-1.$EXT"
   gm convert "$CACHE_DIR/blur-0.$EXT" \
     -scale 33% \
-    -blur 0x16 \
-    -fill "#000" -colorize 40% \
+    -blur 0x32 \
+    -fill "#000" -colorize 20% \
     -scale 300% \
     "$CACHE_DIR/blur-final.$EXT"
   info "Done."
@@ -113,20 +112,27 @@ is_blank() {
 set_blurred_wallpaper() {
   debug "Setting blurred wallpaper"
 
-  # We're going to redirect output to /dev/null to supress feh warnings
-  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-0.$EXT" &> /dev/null
-  sleep $ANIMATION_INTERVAL
-  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-1.$EXT" &> /dev/null
-  sleep $ANIMATION_INTERVAL
+  if [[ "$ANIMATE_FADE" == 1 ]]; then
+    # We're going to redirect output to /dev/null to supress feh warnings
+    feh --no-fehbg --bg-fill "$CACHE_DIR/blur-0.$EXT" &> /dev/null
+    sleep $ANIMATION_INTERVAL
+    feh --no-fehbg --bg-fill "$CACHE_DIR/blur-1.$EXT" &> /dev/null
+    sleep $ANIMATION_INTERVAL
+  fi
+
   feh --no-fehbg --bg-fill "$CACHE_DIR/blur-final.$EXT" &> /dev/null
 }
 
 set_original_wallpaper() {
   debug "Setting original wallpaper"
-  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-1.$EXT" &> /dev/null
-  sleep $ANIMATION_INTERVAL
-  feh --no-fehbg --bg-fill "$CACHE_DIR/blur-0.$EXT" &> /dev/null
-  sleep $ANIMATION_INTERVAL
+
+  if [[ "$ANIMATE_FADE" == 1 ]]; then
+    feh --no-fehbg --bg-fill "$CACHE_DIR/blur-1.$EXT" &> /dev/null
+    sleep $ANIMATION_INTERVAL
+    feh --no-fehbg --bg-fill "$CACHE_DIR/blur-0.$EXT" &> /dev/null
+    sleep $ANIMATION_INTERVAL
+  fi
+
   feh --no-fehbg --bg-fill "$wall_original" &> /dev/null
 }
 
