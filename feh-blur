@@ -4,9 +4,7 @@
 PROC_EXPR="bash.*$(basename "$0")"
 
 # How much to blur
-# BLUR="0x4 0x8 0x16"  # less
-# BLUR="0x6 0x12 0x24"  # medium
-BLUR="0x8 0x16 0x32"  # moar
+BLUR_STRENGTH="32"
 
 # The name of this program
 BIN="$(basename "$0")"
@@ -73,19 +71,19 @@ generate_blurred_images () {
   info "Generating blurred images..."
   gm convert "$original" \
     -scale 33% \
-    -blur "$(echo "$BLUR" | cut -d' ' -f 1)" \
+    -blur "0x$(expr "$BLUR_STRENGTH" / 4)" \
     -fill "#000" -colorize 7% \
     -scale 300% \
     "$CACHE_DIR/blur-0.$EXT"
   gm convert "$CACHE_DIR/blur-0.$EXT" \
     -scale 33% \
-    -blur "$(echo "$BLUR" | cut -d' ' -f 2)" \
+    -blur "0x$(expr "$BLUR_STRENGTH" / 2)" \
     -fill "#000" -colorize 12% \
     -scale 300% \
     "$CACHE_DIR/blur-1.$EXT"
   gm convert "$CACHE_DIR/blur-0.$EXT" \
     -scale 33% \
-    -blur "$(echo "$BLUR" | cut -d' ' -f 3)" \
+    -blur "0x$(expr "$BLUR_STRENGTH" / 1)" \
     -fill "#000" -colorize 20% \
     -scale 300% \
     "$CACHE_DIR/blur-final.$EXT"
@@ -198,10 +196,13 @@ show_help() {
   echo "Usage: $BIN [-v|--verbose]"
   echo ''
   echo 'Options:'
+  echo '  -b, --blur N    set blur strength to N (default 32)'
   echo ''
+  echo 'Daemon options:'
   echo '  -d, --daemon    Run in background'
   echo '  -s, --stop      Stop previously-ran daemon'
   echo ''
+  echo 'Other options:'
   echo '  -v, --verbose   Show more messages'
   echo '  -q, --quiet     Supress messages'
   echo ''
@@ -216,6 +217,10 @@ parse_opts() {
     -V | --version )
       echo version
       exit
+      ;;
+    -b | --blur )
+      shift
+      BLUR_STRENGTH="$1"
       ;;
     -d | --daemon )
       MODE=background
@@ -273,7 +278,7 @@ main() {
     background)
       kill_other_instances
       print_usage
-      "$0" --quiet & disown
+      "$0" --quiet --blur "$BLUR_STRENGTH" & disown
       head "Background mode"
       info "$BIN started in background mode!"
       info "To stop, use '$BIN --stop'."
