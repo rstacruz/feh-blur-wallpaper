@@ -3,6 +3,11 @@
 
 PROC_EXPR="bash.*$(basename "$0")"
 
+# How much to blur
+# BLUR="0x4 0x8 0x16"  # less
+# BLUR="0x6 0x12 0x24"  # medium
+BLUR="0x8 0x16 0x32"  # moar
+
 # The name of this program
 BIN="$(basename "$0")"
 
@@ -68,19 +73,19 @@ generate_blurred_images () {
   info "Generating blurred images..."
   gm convert "$original" \
     -scale 33% \
-    -blur 0x2 \
+    -blur "$(echo "$BLUR" | cut -d' ' -f 1)" \
     -fill "#000" -colorize 7% \
     -scale 300% \
     "$CACHE_DIR/blur-0.$EXT"
   gm convert "$CACHE_DIR/blur-0.$EXT" \
     -scale 33% \
-    -blur 0x8 \
+    -blur "$(echo "$BLUR" | cut -d' ' -f 2)" \
     -fill "#000" -colorize 12% \
     -scale 300% \
     "$CACHE_DIR/blur-1.$EXT"
   gm convert "$CACHE_DIR/blur-0.$EXT" \
     -scale 33% \
-    -blur 0x32 \
+    -blur "$(echo "$BLUR" | cut -d' ' -f 3)" \
     -fill "#000" -colorize 20% \
     -scale 300% \
     "$CACHE_DIR/blur-final.$EXT"
