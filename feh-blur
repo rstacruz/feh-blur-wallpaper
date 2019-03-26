@@ -6,6 +6,9 @@ PROC_EXPR="bash.*$(basename "$0")"
 # How much to blur
 BLUR_STRENGTH="32"
 
+# How much to dim
+DIM_STRENGTH="32"
+
 # The name of this program
 BIN="$(basename "$0")"
 
@@ -71,20 +74,20 @@ generate_blurred_images () {
   info "Generating blurred images..."
   gm convert "$original" \
     -scale 33% \
-    -blur "0x$(expr "$BLUR_STRENGTH" / 4)" \
-    -fill "#000" -colorize 7% \
+    -blur "0x$(( "$BLUR_STRENGTH" / 4 ))" \
+    -fill "#000" -colorize "$(( "$DIM_STRENGTH" / 4 ))%" \
     -scale 300% \
     "$CACHE_DIR/blur-0.$EXT"
   gm convert "$CACHE_DIR/blur-0.$EXT" \
     -scale 33% \
-    -blur "0x$(expr "$BLUR_STRENGTH" / 2)" \
-    -fill "#000" -colorize 12% \
+    -blur "0x$(( "$BLUR_STRENGTH" / 2 ))" \
+    -fill "#000" -colorize "$(( "$DIM_STRENGTH" / 2 ))%" \
     -scale 300% \
     "$CACHE_DIR/blur-1.$EXT"
   gm convert "$CACHE_DIR/blur-0.$EXT" \
     -scale 33% \
-    -blur "0x$(expr "$BLUR_STRENGTH" / 1)" \
-    -fill "#000" -colorize 20% \
+    -blur "0x$(( "$BLUR_STRENGTH" / 1 ))" \
+    -fill "#000" -colorize "$(( "$DIM_STRENGTH" / 1 ))%" \
     -scale 300% \
     "$CACHE_DIR/blur-final.$EXT"
   info "Done."
@@ -196,7 +199,8 @@ show_help() {
   echo "Usage: $BIN [-v|--verbose]"
   echo ''
   echo 'Options:'
-  echo '  -b, --blur N    set blur strength to N (default 32)'
+  echo '  -b, --blur N    set blur strength to N (4...128, default 32)'
+  echo '  -D, --dim N     set dim strength to N (4...100, default 32)'
   echo ''
   echo 'Daemon options:'
   echo '  -d, --daemon    Run in background'
@@ -221,6 +225,10 @@ parse_opts() {
     -b | --blur )
       shift
       BLUR_STRENGTH="$1"
+      ;;
+    -D | --dim )
+      shift
+      DIM_STRENGTH="$1"
       ;;
     -d | --daemon )
       MODE=background
@@ -278,7 +286,13 @@ main() {
     background)
       kill_other_instances
       print_usage
-      "$0" --quiet --blur "$BLUR_STRENGTH" & disown
+
+      "$0" \
+        --quiet \
+        --blur "$BLUR_STRENGTH" \
+        --dim "$DIM_STRENGTH" \
+        & disown
+
       head "Background mode"
       info "$BIN started in background mode!"
       info "To stop, use '$BIN --stop'."
