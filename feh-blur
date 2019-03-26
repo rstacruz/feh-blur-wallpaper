@@ -9,6 +9,9 @@ BLUR_STRENGTH="32"
 # How much to dim
 DIM_STRENGTH="32"
 
+# Dimmer
+DIM_COLOR="#000"
+
 # The name of this program
 BIN="$(basename "$0")"
 
@@ -75,19 +78,19 @@ generate_blurred_images () {
   gm convert "$original" \
     -scale 33% \
     -blur "0x$(( "$BLUR_STRENGTH" / 4 ))" \
-    -fill "#000" -colorize "$(( "$DIM_STRENGTH" / 4 ))%" \
+    -fill "$DIM_COLOR" -colorize "$(( "$DIM_STRENGTH" / 4 ))%" \
     -scale 300% \
     "$CACHE_DIR/blur-0.$EXT"
   gm convert "$CACHE_DIR/blur-0.$EXT" \
     -scale 33% \
     -blur "0x$(( "$BLUR_STRENGTH" / 2 ))" \
-    -fill "#000" -colorize "$(( "$DIM_STRENGTH" / 2 ))%" \
+    -fill "$DIM_COLOR" -colorize "$(( "$DIM_STRENGTH" / 2 ))%" \
     -scale 300% \
     "$CACHE_DIR/blur-1.$EXT"
   gm convert "$CACHE_DIR/blur-0.$EXT" \
     -scale 33% \
     -blur "0x$(( "$BLUR_STRENGTH" / 1 ))" \
-    -fill "#000" -colorize "$(( "$DIM_STRENGTH" / 1 ))%" \
+    -fill "$DIM_COLOR" -colorize "$(( "$DIM_STRENGTH" / 1 ))%" \
     -scale 300% \
     "$CACHE_DIR/blur-final.$EXT"
   info "Done."
