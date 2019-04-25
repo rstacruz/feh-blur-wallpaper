@@ -75,22 +75,39 @@ generate_blurred_images () {
   head "Found wallpaper"
   info "$source"
   info "Generating blurred images..."
+
+  local blur1=""
+  local blur2=""
+  local blur3=""
+  local dim1=""
+  local dim2=""
+  local dim3=""
+
+  if [[ "$BLUR_STRENGTH" != "0" ]]; then 
+    blur1="-blur 0x$(( "$BLUR_STRENGTH" / 4 ))"
+    blur2="-blur 0x$(( "$BLUR_STRENGTH" / 2 ))"
+    blur3="-blur 0x$(( "$BLUR_STRENGTH" / 1 ))"
+  fi
+
+  if [[ "$DIM_STRENGTH" != "0" ]]; then
+    dim1="-fill $DIM_COLOR -colorize $(( "$DIM_STRENGTH" / 4 ))%"
+    dim2="-fill $DIM_COLOR -colorize $(( "$DIM_STRENGTH" / 2 ))%"
+    dim3="-fill $DIM_COLOR -colorize $(( "$DIM_STRENGTH" / 1 ))%"
+  fi
+
   gm convert "$original" \
     -scale 33% \
-    -blur "0x$(( "$BLUR_STRENGTH" / 4 ))" \
-    -fill "$DIM_COLOR" -colorize "$(( "$DIM_STRENGTH" / 4 ))%" \
+    $blur1 $dim1 \
     -scale 300% \
     "$CACHE_DIR/blur-0.$EXT"
   gm convert "$CACHE_DIR/blur-0.$EXT" \
     -scale 33% \
-    -blur "0x$(( "$BLUR_STRENGTH" / 2 ))" \
-    -fill "$DIM_COLOR" -colorize "$(( "$DIM_STRENGTH" / 2 ))%" \
+    $blur2 $dim2 \
     -scale 300% \
     "$CACHE_DIR/blur-1.$EXT"
   gm convert "$CACHE_DIR/blur-0.$EXT" \
     -scale 33% \
-    -blur "0x$(( "$BLUR_STRENGTH" / 1 ))" \
-    -fill "$DIM_COLOR" -colorize "$(( "$DIM_STRENGTH" / 1 ))%" \
+    $blur3 $dim3 \
     -scale 300% \
     "$CACHE_DIR/blur-final.$EXT"
   info "Done."
