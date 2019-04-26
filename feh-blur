@@ -92,7 +92,7 @@ generate_blurred_images () {
   if [[ "$REDUCE_CONTRAST" = "1" ]]; then
     fx1="+contrast $fx1"
     fx2="+contrast +contrast $fx2"
-    fx3="+contrast +contrast +contrast $fx3"
+    fx3="+contrast +contrast +contrast +contrast $fx3"
   fi
 
   if [[ "$DIM_STRENGTH" != "0" ]]; then
@@ -185,6 +185,7 @@ kill_other_instances() {
 run_loop () {
   prev_blank="-"
   prev_wallpaper="-"
+  first_run="1"
 
   while true; do
     wallpaper="$(get_feh_wallpaper)"
@@ -206,11 +207,15 @@ run_loop () {
     if [[ "$prev_blank" != "$blank" ]]; then
       if [[ "$blank" == 0 ]]; then
         set_blurred_wallpaper
-      else
+      elif [[ "$first_run" == "0" ]]; then
+        # Skip set_original_wallpaper if we were started without
+        # an active window so that the animation is skipped
         set_original_wallpaper
       fi
       prev_blank="$blank"
     fi
+
+    first_run=0
     sleep "$POLL_INTERVAL"
   done
 }
