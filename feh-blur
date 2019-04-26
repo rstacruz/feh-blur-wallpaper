@@ -6,6 +6,9 @@ PROC_EXPR="bash.*$(basename "$0")"
 # How much to blur
 BLUR_STRENGTH="32"
 
+# Contrast
+REDUCE_CONTRAST="0"
+
 # How much to dim
 DIM_STRENGTH="32"
 
@@ -76,39 +79,36 @@ generate_blurred_images () {
   info "$source"
   info "Generating blurred images..."
 
-  local blur1=""
-  local blur2=""
-  local blur3=""
-  local dim1=""
-  local dim2=""
-  local dim3=""
+  local fx1=""
+  local fx2=""
+  local fx3=""
 
   if [[ "$BLUR_STRENGTH" != "0" ]]; then 
-    blur1="-blur 0x$(( "$BLUR_STRENGTH" / 4 ))"
-    blur2="-blur 0x$(( "$BLUR_STRENGTH" / 2 ))"
-    blur3="-blur 0x$(( "$BLUR_STRENGTH" / 1 ))"
+    fx1="$fx1 -scale 33% -blur 0x$(( "$BLUR_STRENGTH" / 4 )) -scale 300%"
+    fx2="$fx2 -scale 33% -blur 0x$(( "$BLUR_STRENGTH" / 2 )) -scale 300%"
+    fx3="$fx3 -scale 33% -blur 0x$(( "$BLUR_STRENGTH" / 1 )) -scale 300%"
+  fi
+
+  if [[ "$REDUCE_CONTRAST" = "1" ]]; then
+    fx1="+contrast $fx1"
+    fx2="+contrast +contrast $fx2"
+    fx3="+contrast +contrast +contrast $fx3"
   fi
 
   if [[ "$DIM_STRENGTH" != "0" ]]; then
-    dim1="-fill $DIM_COLOR -colorize $(( "$DIM_STRENGTH" / 4 ))%"
-    dim2="-fill $DIM_COLOR -colorize $(( "$DIM_STRENGTH" / 2 ))%"
-    dim3="-fill $DIM_COLOR -colorize $(( "$DIM_STRENGTH" / 1 ))%"
+    fx1="$fx1 -fill $DIM_COLOR -colorize $(( "$DIM_STRENGTH" / 4 ))%"
+    fx2="$fx2 -fill $DIM_COLOR -colorize $(( "$DIM_STRENGTH" / 2 ))%"
+    fx3="$fx3 -fill $DIM_COLOR -colorize $(( "$DIM_STRENGTH" / 1 ))%"
   fi
 
   gm convert "$original" \
-    -scale 33% \
-    $blur1 $dim1 \
-    -scale 300% \
+    $fx1 \
     "$CACHE_DIR/blur-0.$EXT"
   gm convert "$CACHE_DIR/blur-0.$EXT" \
-    -scale 33% \
-    $blur2 $dim2 \
-    -scale 300% \
+    $fx2 \
     "$CACHE_DIR/blur-1.$EXT"
   gm convert "$CACHE_DIR/blur-0.$EXT" \
-    -scale 33% \
-    $blur3 $dim3 \
-    -scale 300% \
+    $fx3 \
     "$CACHE_DIR/blur-final.$EXT"
   info "Done."
 }
@@ -219,16 +219,17 @@ show_help() {
   echo "Usage: $BIN [-v|--verbose]"
   echo ''
   echo 'Options:'
-  echo '  -b, --blur N    set blur strength to N (4...128, default 32)'
-  echo '  -D, --dim N     set dim strength to N (4...100, default 32)'
+  echo '  -b, --blur N      set blur strength to N (4...128, default 32)'
+  echo '  -D, --dim N       set dim strength to N (4...100, default 32)'
+  echo '  -c, --uncontrast  reduce contrast'
   echo ''
   echo 'Daemon options:'
-  echo '  -d, --daemon    Run in background'
-  echo '  -s, --stop      Stop previously-ran daemon'
+  echo '  -d, --daemon      run in background'
+  echo '  -s, --stop        stop previously-ran daemon'
   echo ''
   echo 'Other options:'
-  echo '  -v, --verbose   Show more messages'
-  echo '  -q, --quiet     Supress messages'
+  echo '  -v, --verbose     show more messages'
+  echo '  -q, --quiet       supress messages'
   echo ''
 }
 
@@ -245,6 +246,9 @@ parse_opts() {
     -b | --blur )
       shift
       BLUR_STRENGTH="$1"
+      ;;
+    -c | --uncontrast )
+      REDUCE_CONTRAST=1
       ;;
     -D | --dim )
       shift
@@ -311,6 +315,7 @@ main() {
         --quiet \
         --blur "$BLUR_STRENGTH" \
         --dim "$DIM_STRENGTH" \
+        $(if [[ "$REDUCE_CONTRAST" = "1" ]]; then echo --uncontrast; fi) \
         & disown
 
       head "Background mode"
