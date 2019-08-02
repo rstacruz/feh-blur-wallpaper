@@ -248,7 +248,7 @@ show_help() {
   echo ''
   echo 'Options:'
   echo '  -b, --blur N            set blur strength to N (4...128, default 32)'
-  echo '  -D, --darken N          darken image by N (4...100, default 32)'
+  echo '      --darken N          darken image by N (4...100, default 32)'
   echo '      --lighten N         lengthen image by N (4...100, default 0)'
   echo '  -c, --uncontrast        reduce contrast'
   echo '      --save-image PATH   save blurred image to PATH'
