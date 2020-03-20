@@ -145,8 +145,15 @@ get_current_workspace() {
 
 # get_open_windows_count() => "2"
 get_open_windows_count() {
+  count=0
   workspace="$(get_current_workspace)"
-  wmctrl -l | cut -d' ' -f3 | grep -c "$workspace"
+  for id in $(wmctrl -l | cut -d' ' -f1);do
+    if [[ $(wmctrl -l | grep $id | cut -d' ' -f3) == $workspace ]]
+    then
+      xprop -id "$id" | grep -Fq 'window state: Iconic' || ((count++))
+    fi
+  done
+  echo $count
 }
 
 is_blank() {
