@@ -1,7 +1,7 @@
 <p align='center'>
 <br>
-<a href='https://user-images.githubusercontent.com/74385/54021387-03d57c80-41cb-11e9-8015-2352778271d9.gif'>
-<img src='https://user-images.githubusercontent.com/74385/54021387-03d57c80-41cb-11e9-8015-2352778271d9.gif' width='400'>
+<a href='https://raw.githubusercontent.com/ngynLk/feh-blur-wallpaper/master/preview.gif'>
+<img src='https://raw.githubusercontent.com/ngynLk/feh-blur-wallpaper/master/preview.gif' width='400'>
 </a>
 <br>
 
