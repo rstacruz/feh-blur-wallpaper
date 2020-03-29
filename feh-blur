@@ -134,7 +134,7 @@ get_feh_wallpaper() {
 
 # Get wallpaper mode like --bg-tile
 get_feh_wallpaper_mode() {
-  tail -n1 "$HOME/.fehbg" | sed 's/--no-fehbg //g' | cut -d' ' -f2 | sed "s/'/g"
+  tail -n1 "$HOME/.fehbg" | sed 's/--no-fehbg //g' | cut -d' ' -f2 | sed "s/'//g"
 }
 
 # get_current_workspace => "2"
