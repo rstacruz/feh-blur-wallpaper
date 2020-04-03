@@ -1,7 +1,7 @@
 <p align='center'>
 <br>
-<a href='https://preview.redd.it/tw00cf31iiq41.gif?format=mp4&s=e85c3e6e5d1bcaa09b5056326b98fefc1eed4ee1'>
-<img src='https://preview.redd.it/tw00cf31iiq41.gif?format=mp4&s=e85c3e6e5d1bcaa09b5056326b98fefc1eed4ee1' width='400'>
+<a href='https://raw.githubusercontent.com/ngynLk/feh-blur-wallpaper/master/untitled.gif'>
+<img src='https://raw.githubusercontent.com/ngynLk/feh-blur-wallpaper/master/untitled.gif' width='400'>
 </a>
 <br>
 
