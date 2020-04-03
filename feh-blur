@@ -129,12 +129,12 @@ generate_blurred_images () {
 
 # Get current feh wallpaper
 get_feh_wallpaper() {
-  tail -n1 "$HOME/.fehbg" | sed 's/--no-fehbg //g' | cut -d"'" -f2
+  tail -n1 "$HOME/.fehbg" | sed 's/--no-fehbg //g' | cut -d' ' -f3 | sed "s/'//g"
 }
 
 # Get wallpaper mode like --bg-tile
 get_feh_wallpaper_mode() {
-  tail -n1 "$HOME/.fehbg" | sed 's/--no-fehbg //g' | cut -d' ' -f2
+  tail -n1 "$HOME/.fehbg" | sed 's/--no-fehbg //g' | cut -d' ' -f2 | sed "s/'//g"
 }
 
 # get_current_workspace => "2"
@@ -145,8 +145,15 @@ get_current_workspace() {
 
 # get_open_windows_count() => "2"
 get_open_windows_count() {
+  count=0
   workspace="$(get_current_workspace)"
-  wmctrl -l | cut -d' ' -f3 | grep -c "$workspace"
+  for id in $(wmctrl -l | cut -d' ' -f1);do
+    if [[ $(wmctrl -l | grep $id | cut -d' ' -f3) == $workspace ]]
+    then
+      xprop -id "$id" | grep -Fq 'window state: Iconic' || ((count++))
+    fi
+  done
+  echo $count
 }
 
 is_blank() {
