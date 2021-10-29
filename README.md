@@ -12,7 +12,7 @@ feh-blur-wallpaper
 </h1>
 
 <p align='center'>
-<em>ngynLk's fork : Blur your desktop wallpaper when windows are open (Linux)</em>
+<em>kiddae's fork : Blur your desktop wallpaper when windows are open (Linux)</em>
 </p>
 
 <p align='center'>
