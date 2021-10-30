@@ -1,7 +1,7 @@
 <p align='center'>
 <br>
-<a href='https://user-images.githubusercontent.com/74385/54021387-03d57c80-41cb-11e9-8015-2352778271d9.gif'>
-<img src='https://user-images.githubusercontent.com/74385/54021387-03d57c80-41cb-11e9-8015-2352778271d9.gif' width='400'>
+<a href='https://raw.githubusercontent.com/ngynLk/feh-blur-wallpaper/master/untitled.gif'>
+<img src='https://raw.githubusercontent.com/ngynLk/feh-blur-wallpaper/master/untitled.gif' width='400'>
 </a>
 <br>
 
@@ -12,7 +12,7 @@ feh-blur-wallpaper
 </h1>
 
 <p align='center'>
-<em>Blur your desktop wallpaper when windows are open (Linux)</em>
+<em>kiddae's fork : Blur your desktop wallpaper when windows are open (Linux)</em>
 </p>
 
 <p align='center'>
@@ -22,6 +22,7 @@ feh-blur-wallpaper
 <br>
 
 Blurs your desktop wallpaper when windows are open.
+This is a fork, with added support for minimized/activated windows: if you minimize your windows in openbox for example, your wallpaper also blurs!
 Runs as a service, blurring any wallpaper set by [feh].
 Works great with [i3wm], but should work with any Linux window manager! 🎉
 
